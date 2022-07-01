@@ -1,0 +1,829 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Sportradar Codeacademy Backend Challange
+  contact:
+    name: API Support
+    url: 'http://www.example.com/support'
+    email: support@example.com
+  description: |
+    # Challange
+    In this challange, you will implement an API from the ground up. The purpose of this API is to provide a plattform to review __Books__. But in later versions it should also be possible to review __Movies__, __Video Games__ or __TV/Streaming Series__.
+servers:
+  - url: 'http://localhost:{port}'
+    variables:
+      port:
+        enum:
+          - '8088'
+        default: '8088'
+tags:
+  - name: Users
+    description: 'Everyone that wants to write a review in the application, has to create a User. Users are split into 2 roles, __administrator__ and __reviewer__. For simplicity only 1 admin user will exist. '
+  - name: Books
+    description: 'Books have a name, a description and a cover image. They have one author, and can have multiple genre.'
+  - name: Authors
+    description: 'For Authors we save the pen names. Examples would be __Dan Brown__, __J.R.R Tolkin__, __Tom Clancy__.'
+  - name: Genre
+    description: 'Genre is used to categorize the Books. Examples would be __Sci-fi__, __Crime__, __Cooking__.'
+  - name: Reviews
+    description: A Review is written by a User.
+paths:
+  /users:
+    get:
+      summary: User list
+      operationId: listUsers
+      description: 'A list containing all users. Only available for the __admin__ user, since data like email address should not be publicly avaliable.'
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+      responses:
+        '200':
+          $ref: '#/components/responses/Users'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    post:
+      summary: Create a User
+      operationId: createUser
+      description: A route for registration purposes. Every user created with this route is automatically a reviewer.
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+            example:
+              username: SomeReviewer421
+              email: fake@ruse.com
+              avatar: 'http://example.com'
+              password: '1234567890'
+              passwordConfirm: '1234567890'
+      responses:
+        '201':
+          $ref: '#/components/responses/NullResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  '/users/{userId}':
+    get:
+      summary: Get a specific User
+      operationId: showUserById
+      description: Info for a specific user
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          $ref: '#/components/responses/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    put:
+      summary: Update a User
+      operationId: updateUserById
+      description: 'Update a User, only that user is allowed to do this.'
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+        - $ref: '#/components/parameters/userId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          $ref: '#/components/responses/NullResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    delete:
+      summary: Delete a User
+      operationId: deleteUserById
+      description: 'Delete a User, only that user is allowed to do this.'
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '201':
+          $ref: '#/components/responses/NullResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /books:
+    get:
+      summary: Books list
+      operationId: listBooks
+      description: List all Books
+      tags:
+        - Books
+      parameters:
+        - $ref: '#/components/parameters/queryAuthorId'
+        - $ref: '#/components/parameters/queryGenreId'
+      responses:
+        '200':
+          description: An array of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    post:
+      summary: Create a Book
+      operationId: createBook
+      description: 'Create a Book, only an __administrator__ is allowed to do this.'
+      tags:
+        - Books
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Book'
+      responses:
+        '201':
+          description: Success
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  '/books/{bookId}':
+    get:
+      summary: Get a specific Book
+      operationId: showBookById
+      description: Info for a specific Book
+      tags:
+        - Books
+      parameters:
+        - $ref: '#/components/parameters/bookId'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: '#/components/schemas/User/properties/id'
+                  name:
+                    type: string
+                    example: The Hobbit
+                    maxLength: 50
+                  descrption:
+                    type: string
+                    description: A short summary about the book
+                    maxLength: 4000
+                  cover:
+                    type: string
+                    format: uri
+                  author:
+                    $ref: '#/components/schemas/Author'
+                  genre:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Genre'
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/paths/~1reviews~1%7BreviewId%7D/get/responses/200/content/application~1json/schema'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    put:
+      summary: Update a Book
+      operationId: updateBookById
+      description: 'Update an Author, only an __administrator__ is allowed to do this.'
+      tags:
+        - Books
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+        - $ref: '#/components/parameters/bookId'
+      requestBody:
+        $ref: '#/paths/~1books/post/requestBody'
+      responses:
+        '201':
+          description: Success
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    delete:
+      summary: Delete a Book
+      operationId: deleteBookById
+      description: 'Delete an Author, only an __administrator__ is allowed to do this.'
+      tags:
+        - Books
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+        - $ref: '#/components/parameters/bookId'
+      responses:
+        '201':
+          description: Success
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /authors:
+    get:
+      summary: Authors list
+      operationId: listAuthors
+      description: List all Authors. Could be used in a selectbox for filters or for creation.
+      tags:
+        - Authors
+      parameters:
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: An array of Authors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Author'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    post:
+      summary: Create an Author
+      operationId: createAuthor
+      description: 'Create an Author, only an __administrator__ is allowed to do this.'
+      tags:
+        - Authors
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Author'
+            example:
+              name: J.R.R Tolkin
+      responses:
+        '201':
+          description: Success
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  '/authors/{authorId}':
+    get:
+      summary: Get a specific Author
+      operationId: showAuthorById
+      description: Info for a specific Author. Could be used in a form.
+      tags:
+        - Authors
+      parameters:
+        - $ref: '#/components/parameters/authorId'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Author'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    put:
+      summary: Update an Author
+      operationId: updateAuthorById
+      description: 'Update an Author, only an __administrator__ is allowed to do this.'
+      tags:
+        - Authors
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+        - $ref: '#/components/parameters/authorId'
+      requestBody:
+        $ref: '#/paths/~1authors/post/requestBody'
+      responses:
+        '201':
+          description: Success
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    delete:
+      summary: Delete an Author
+      operationId: deleteAuthorById
+      description: 'Delete an Author, only an __administrator__ is allowed to do this.'
+      tags:
+        - Authors
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+        - $ref: '#/components/parameters/authorId'
+      responses:
+        '201':
+          description: Success
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /genre:
+    get:
+      summary: Genre list
+      operationId: listGenre
+      description: List all Genre. Could be used in a selectbox for filters or for creation.
+      tags:
+        - Genre
+      responses:
+        '200':
+          description: An array of genre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Genre'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    post:
+      summary: Create an Genre
+      operationId: createGenre
+      description: 'Create an Genre, only an __administrator__ is allowed to do this.'
+      tags:
+        - Genre
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Genre'
+            example:
+              name: Sci-fi
+      responses:
+        '201':
+          description: Success
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  '/genre/{genreId}':
+    get:
+      summary: Get a specific Genre
+      operationId: showGenreById
+      description: Info for a specific Genre
+      tags:
+        - Genre
+      parameters:
+        - $ref: '#/components/parameters/genreId'
+      responses:
+        '200':
+          description: The requested Genre
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Genre'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    put:
+      summary: Update an Genre
+      operationId: updateGenreById
+      description: 'Update an Genre, only an __administrator__ is allowed to do this.'
+      tags:
+        - Genre
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+        - $ref: '#/components/parameters/genreId'
+      requestBody:
+        $ref: '#/paths/~1genre/post/requestBody'
+      responses:
+        '201':
+          description: Success
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    delete:
+      summary: Delete an Genre
+      operationId: deleteGenreById
+      description: 'Delete an Genre, only an __administrator__ is allowed to do this.'
+      tags:
+        - Genre
+      parameters:
+        - $ref: '#/components/parameters/genreId'
+      responses:
+        '201':
+          description: Success
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /reviews:
+    post:
+      summary: Create a Review
+      operationId: createReview
+      description: Create a Review
+      tags:
+        - Reviews
+      parameters:
+        - $ref: '#/components/parameters/X-User-Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1reviews~1%7BreviewId%7D/get/responses/200/content/application~1json/schema'
+            example:
+              score: 5
+              title: A Title
+              summary: A bit longer Text
+              book:
+                id: 1
+      responses:
+        '201':
+          description: Success
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  '/reviews/{reviewId}':
+    get:
+      summary: Get a specific Review
+      operationId: showReviewById
+      description: Info for a specific Review
+      tags:
+        - Reviews
+      parameters:
+        - $ref: '#/components/parameters/reviewId'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: '#/components/schemas/User/properties/id'
+                  score:
+                    description: Score from 1 (poor) to 10 (amazing).
+                    type: integer
+                    minimum: 1
+                    maximum: 10
+                  title:
+                    description: Short headline.
+                    type: string
+                    example: I liked this
+                    maxLength: 255
+                  summary:
+                    description: 'Longer, more detailed summary.'
+                    type: string
+                    maxLength: 4000
+                  book:
+                    $ref: '#/components/schemas/Book'
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+components:
+  parameters:
+    X-User-Id:
+      name: X-User-Id
+      in: header
+      schema:
+        type: string
+      required: true
+    userId:
+      name: userId
+      in: path
+      required: true
+      description: The id of the user to retrieve
+      schema:
+        type: string
+    bookId:
+      name: bookId
+      in: path
+      required: true
+      description: The id of the book to retrieve
+      schema:
+        type: string
+    authorId:
+      name: authorId
+      in: path
+      required: true
+      description: The id of the author to retrieve
+      schema:
+        type: string
+    genreId:
+      name: genreId
+      in: path
+      required: true
+      description: The id of the genre to retrieve
+      schema:
+        type: string
+    reviewId:
+      name: reviewId
+      in: path
+      required: true
+      description: The id of the review to retrieve
+      schema:
+        type: string
+    queryAuthorId:
+      name: authorId
+      in: query
+      description: Use the authorId to get Books of that author.
+      required: false
+      schema:
+        type: integer
+        format: int32
+    queryGenreId:
+      name: genreId
+      in: query
+      description: Use the genreId to get Books of that genre.
+      required: false
+      schema:
+        type: integer
+        format: int32
+    limit:
+      name: limit
+      in: query
+      description: How many items to return at one time (max 100)
+      required: false
+      schema:
+        type: integer
+        format: int32
+  schemas:
+    Error:
+      description: a general error response.
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+        - code
+        - message
+    DetailedError:
+      description: a more detailed error response.
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        validation:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: email
+              message:
+                type: string
+                example: email address was not valid.
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          readOnly: true
+        username:
+          type: string
+          example: Testuser
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        avatar:
+          type: string
+          format: uri
+        role:
+          type: string
+          enum:
+            - administrator
+            - reviewer
+          readOnly: true
+        password:
+          type: string
+          format: password
+          writeOnly: true
+        passwordConfirm:
+          type: string
+          format: password
+          writeOnly: true
+    Book:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/User/properties/id'
+        name:
+          type: string
+          example: The Hobbit
+          maxLength: 50
+        descrption:
+          type: string
+          description: A short summary about the book
+          maxLength: 4000
+        cover:
+          type: string
+          format: uri
+        author:
+          $ref: '#/components/schemas/Author'
+        genre:
+          type: array
+          items:
+            $ref: '#/components/schemas/Genre'
+    Author:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/User/properties/id'
+        name:
+          type: string
+          description: Authors pseudonym
+          example: J.R.R Tolkin
+          maxLength: 50
+    Genre:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/User/properties/id'
+        name:
+          example: Fantasy
+          type: string
+          maxLength: 50
+  responses:
+    UnexpectedError:
+      description: unexpected error
+      content:
+        application/json:
+          schema:
+            description: a general error response.
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+            required:
+              - code
+              - message
+    NullResponse:
+      description: Null response
+    NotFoundError:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ForbiddenError:
+      description: Forbbiden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequestError:
+      description: BadRequest
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DetailedError'
+    User:
+      description: The requested User
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+    Users:
+      description: An array of users
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/User'
+  securitySchemes:
+    bearerAuth:
+      description: 'As said, keep Authentication simple.'
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
