@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   version: 1.0.0
-  title: Sportradar Codeacademy Backend Challange
+  title: Backend API Challange
   contact:
     name: API Support
     url: 'http://www.example.com/support'
