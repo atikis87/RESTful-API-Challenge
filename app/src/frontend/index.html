@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Backend Challenge</title>
+</head>
+<body>
+<h1>Hello World!</h1>
+
+<label for="userData">Enter User data:</label>
+<br>
+<textarea id="userData" cols="100" rows="10"></textarea>
+<br>
+<button id="userDataSubmit">Submit</button>
+
+<script>
+    const userDataInput = document.getElementById("userData");
+   const btn = document.getElementById('userDataSubmit');
+
+   btn.addEventListener('click', async () => {
+       const userData  = JSON.stringify(userDataInput.value);
+       const rawResponse = await fetch('/users', {
+           method: 'POST',
+           headers: {
+               'Accept': 'application/json',
+               'Content-Type': 'application/json'
+           },
+           body: userData
+       });
+       const content = await rawResponse.json();
+
+       console.log(content);
+   })
+
+</script>
+</body>
+</html>
